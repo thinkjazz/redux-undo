@@ -100,6 +100,11 @@ export default function undoable (reducer, rawConfig = {}) {
     syncFilter: rawConfig.syncFilter || false
   }
 
+  const fieldExtenders = rawConfig.fieldExtenders.reduce(
+    (nextExtender, curExtender) => nextExtender(curExtender, rawConfig),
+    () => (extendedState) => extendedState
+  )
+
   let initialState = config.history
   return (state = initialState, action = {}, ...slices) => {
     debug.start(action, state)
@@ -119,7 +124,7 @@ export default function undoable (reducer, rawConfig = {}) {
 
         debug.log('do not set initialState on probe actions')
         debug.end(history)
-        return history
+        return fieldExtenders(history)
       } else if (isHistory(state)) {
         history = initialState = config.ignoreInitialState
           ? state : newHistory(
@@ -143,11 +148,13 @@ export default function undoable (reducer, rawConfig = {}) {
       }
     }
 
-    const skipReducer = (res) => config.neverSkipReducer
-      ? {
-        ...res,
-        present: reducer(res.present, action, ...slices)
-      } : res
+    const skipReducer = res =>
+      fieldExtenders(config.neverSkipReducer
+        ? {
+            ...res,
+            present: reducer(res.present, action, ...slices)
+          }
+        : res);
 
     let res
     switch (action.type) {
@@ -200,7 +207,7 @@ export default function undoable (reducer, rawConfig = {}) {
         if (config.initTypes.some((actionType) => actionType === action.type)) {
           debug.log('reset history due to init action')
           debug.end(initialState)
-          return initialState
+          return fieldExtenders(initialState);
         }
 
         if (history._latestUnfiltered === res) {
@@ -229,7 +236,7 @@ export default function undoable (reducer, rawConfig = {}) {
           }
           debug.log('filter ignored action, not storing it in past')
           debug.end(filteredState)
-          return filteredState
+          return fieldExtenders(filteredState);
         }
 
         /* eslint-disable-next-line no-case-declarations */
@@ -244,7 +251,7 @@ export default function undoable (reducer, rawConfig = {}) {
           )
           debug.log('groupBy grouped the action with the previous action')
           debug.end(groupedState)
-          return groupedState
+          return fieldExtenders(groupedState)
         }
 
         // If the action wasn't filtered or grouped, insert normally
@@ -252,7 +259,7 @@ export default function undoable (reducer, rawConfig = {}) {
 
         debug.log('inserted new state into history')
         debug.end(history)
-        return history
+        return fieldExtenders(history)
     }
   }
 }

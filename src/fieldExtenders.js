@@ -14,6 +14,16 @@ undoable(myReducer, {
   ]
 })
 
+// And now the state would look like so
+
+const state = {
+  past: {},
+  present: [],
+  future: {},
+  actionType: 'last action type',
+  // Other fields added by undoable() and customFieldExtender()
+}
+
 // The implementation of field extenders is reminiscent of express middleware
 
 const customFieldExtender = (extenderConfig) => {
