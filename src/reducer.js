@@ -101,8 +101,8 @@ export default function undoable (reducer, rawConfig = {}) {
   }
 
   const fieldExtenders = rawConfig.fieldExtenders.reduce(
-    (nextExtender, curExtender) => nextExtender(curExtender, rawConfig),
-    () => (extendedState) => extendedState
+    (initializedExt, uninitializedExt) => uninitializedExt(initializedExt, rawConfig),
+    (extendedState) => extendedState
   )
 
   let initialState = config.history
