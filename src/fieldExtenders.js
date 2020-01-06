@@ -16,12 +16,13 @@ undoable(myReducer, {
 
 // And now the state would look like so
 
-const state = {
-  past: {},
-  present: [],
-  future: {},
-  actionType: 'last action type',
-  // Other fields added by undoable() and customFieldExtender()
+const history = {
+  past: [ ...pastStates ],
+  present: { ...state },
+  future: [ ...futureStates ],
+  actionType: 'LAST_ACTION_TYPE', // added by actionTypeField()
+
+  // ...other fields added by customFieldExtender()
 }
 
 // The implementation of field extenders is reminiscent of express middleware
@@ -53,6 +54,7 @@ const customFieldExtender = (extenderConfig) => {
 // Here are a few examples that might be interesting
 
 const actionTypeField = (ignoreActions) => {
+  // You can use includeAction() here to only update the actionType field for certain actions
   const ignored = ignoreActions || (() => false)
 
   return (nextReducer, config) => {
@@ -70,6 +72,8 @@ const actionTypeField = (ignoreActions) => {
 const flattenState = () => {
   return (nextReducer, config) => {
     return (state, action) => {
+      // Now the user can access state with state.field instead of state.present.field
+      // Nothing has to change in the undoable() wrapper function
       return nextReducer(
         {
           ...state,
@@ -83,7 +87,7 @@ const flattenState = () => {
 
 // I don't know how much I like this one, but it would answer issue #237
 
-const nullifyFields = (fields = ['fieldName', 'secondField'], nullValue = null) => {
+const nullifyFields = (fields = [], nullValue = null) => {
 
   const removeFields = (state) => {
     if (!state) return state
@@ -109,3 +113,5 @@ const nullifyFields = (fields = ['fieldName', 'secondField'], nullValue = null) 
     }
   }
 }
+
+// It would even be possible to add an undo/redo side-effects like in the issue #150
